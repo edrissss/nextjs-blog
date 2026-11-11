@@ -1,29 +1,33 @@
+
 import Container from "@/app/_components/container";
-import { HeroPost } from "@/app/_components/hero-post";
-import { Intro } from "@/app/_components/intro";
-import { MoreStories } from "@/app/_components/more-stories";
-import { getAllPosts } from "../lib/api";
+import { PostBody } from "@/app/_components/post-body";
+import { getAllPosts } from "@/lib/api";
+import markdownToHtml from "@/lib/markdownToHtml";
 
-export default function Index() {
-  const allPosts = getAllPosts();
+export default async function Index() {
+  const posts = getAllPosts();
 
-  const heroPost = allPosts[0];
-
-  const morePosts = allPosts.slice(1);
+  const renderedPosts = await Promise.all(
+    posts.map(async (post) => ({
+      ...post,
+      html: await markdownToHtml(post.content || ""),
+    }))
+  );
 
   return (
     <main>
       <Container>
-        <Intro />
-        <HeroPost
-          title={heroPost.title}
-          coverImage={heroPost.coverImage}
-          date={heroPost.date}
-          author={heroPost.author}
-          slug={heroPost.slug}
-          excerpt={heroPost.excerpt}
-        />
-        {morePosts.length > 0 && <MoreStories posts={morePosts} />}
+        <div className="py-8">
+          {renderedPosts.map((post) => (
+            <article key={post.slug} className="mb-16">
+              <h2 className="mb-6 text-3xl font-bold">
+                {post.title}
+              </h2>
+
+              <PostBody content={post.html} />
+            </article>
+          ))}
+        </div>
       </Container>
     </main>
   );
